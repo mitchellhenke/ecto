@@ -1540,8 +1540,8 @@ defmodule Ecto.Changeset do
   Validates the given `field` change.
 
   It invokes the `validator` function to perform the validation
-  only if a change for the given `field` exists and the change
-  value is not `nil`. The function must return a list of errors
+  only if a change for the given `field` exists.
+  The function must return a list of errors
   (with an empty list meaning no errors).
 
   In case there's at least one error, the list of errors will be appended to the
@@ -1568,8 +1568,13 @@ defmodule Ecto.Changeset do
     %{changes: changes, errors: errors} = changeset
     ensure_field_exists!(changeset, field)
 
-    value = Map.get(changes, field)
-    new   = if is_nil(value), do: [], else: validator.(field, value)
+    new = case Map.fetch(changes, field) do
+      {:ok, value} ->
+        validator.(field, value)
+      :error ->
+        []
+    end
+
     new   =
       Enum.map(new, fn
         {key, val} when is_atom(key) and is_binary(val) ->
